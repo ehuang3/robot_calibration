@@ -36,50 +36,19 @@
  *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
-#pragma once
-#include <camera_calib/Camera.h>
-#include <camera_calib/Marker.h>
-// #include <camera_calib/CalibrateRobot.h>
-#include <camera_calib/CalibrationMeasurement.h>
-#include <dart/dynamics/dynamics.h>
+#include <gtest/gtest.h>
+#include <ros/ros.h>
+#include <camera_calib/camera_calib.h>
 
-namespace camera_calib
+TEST(ROBOT, LOAD_YAML)
 {
-    class Robot;
 
-    typedef boost::shared_ptr<Robot> RobotPtr;
+}
 
-    typedef boost::shared_ptr<const Robot> RobotConstPtr;
-
-    class Robot
-    {
-    public:
-        typedef boost::shared_ptr<dart::dynamics::Skeleton> SkeletonPtr;
-
-        typedef std::vector<MarkerPtr> AttachedMarkers;
-
-        typedef std::vector<CameraPtr> AttachedCameras;
-
-        struct State
-        {
-            SkeletonPtr     robot;
-            AttachedCameras cameras;
-            AttachedMarkers markers;
-        };
-
-        Robot();
-        ~Robot();
-
-        // Initialize the multi-chain, multi-sensor robot model from a YAML
-        // URI.
-        void loadYAML(const std::string& yaml_uri);
-
-        void loadROS();
-
-        //
-        void getParameters(camera_calib::RobotParameters& params);
-
-    protected:
-        State _state;
-    };
+int main(int argc, char **argv)
+{
+    testing::InitGoogleTest(&argc, argv);
+    ros::init(argc, argv, "robot_test");
+    ros::NodeHandle nh;
+    return RUN_ALL_TESTS();
 }
