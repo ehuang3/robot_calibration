@@ -14,6 +14,8 @@ find_package(catkin REQUIRED COMPONENTS
 
 find_package(Ceres REQUIRED)
 
+find_package(DART REQUIRED)
+
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
 
@@ -98,8 +100,9 @@ catkin_package(
 ## Your package locations should be listed before other locations
 # include_directories(include)
 include_directories(
-  ${catkin_INCLUDE_DIRS}
   ${CERES_INCLUDE_DIRS}
+  ${DART_INCLUDE_DIRS}
+  ${catkin_INCLUDE_DIRS}
 )
 
 ## Declare a cpp library
@@ -160,7 +163,10 @@ include_directories(
 
 ## Add gtest based cpp test target and link libraries
 catkin_add_gtest(ceres_test src/${PROJECT_NAME}/test/ceres_test.cpp)
-target_link_libraries(ceres_test ${CERES_LIBRARIES})
+target_link_libraries(ceres_test ${CERES_LIBRARIES} ${DART_LIBRARIES})
+
+catkin_add_gtest(dart_test src/${PROJECT_NAME}/test/dart_test.cpp)
+target_link_libraries(dart_test ${CERES_LIBRARIES} ${DART_LIBRARIES})
 
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)

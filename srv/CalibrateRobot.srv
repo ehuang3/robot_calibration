@@ -1,0 +1,12 @@
+# This service defines the interface for requesting calibration of cameras and robots.
+
+# The list of measurements made on this system.
+CalibrationMeasurement[] measurements
+
+---
+
+# The estimated robot parameters.
+RobotParameters[] robot_params
+
+# The estimated camera parameters.
+CameraParameters[] camera_params
