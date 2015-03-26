@@ -10,6 +10,7 @@ find_package(catkin REQUIRED COMPONENTS
   sensor_msgs
   std_msgs
   std_srvs
+  genmsg
 )
 
 find_package(Ceres REQUIRED)
@@ -182,7 +183,7 @@ catkin_add_gtest(dart_test src/${PROJECT_NAME}/test/dart_test.cpp)
 target_link_libraries(dart_test ${CERES_LIBRARIES} ${DART_LIBRARIES})
 
 catkin_add_gtest(robot_test src/${PROJECT_NAME}/test/robot_test.cpp)
-target_link_libraries(robot_test ${catkin_LIBRARIES} ${CERES_LIBRARIES} ${DART_LIBRARIES})
+target_link_libraries(robot_test camera_calib ${catkin_LIBRARIES} ${CERES_LIBRARIES} ${DART_LIBRARIES})
 
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)

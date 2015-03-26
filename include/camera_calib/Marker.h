@@ -37,6 +37,7 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 #pragma once
+#include <boost/shared_ptr.hpp>
 
 namespace camera_calib
 {

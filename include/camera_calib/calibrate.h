@@ -36,20 +36,34 @@
  *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
-#include <gtest/gtest.h>
-#include <ros/ros.h>
-#include <camera_calib/camera_calib.h>
+#pragma once
+#include <ceres/ceres.h>
 
-TEST(ROBOT, LOAD_YAML)
+namespace camera_calib
 {
-    camera_calib::Robot robot;
-    robot.loadROS();
-}
 
-int main(int argc, char **argv)
-{
-    testing::InitGoogleTest(&argc, argv);
-    ros::init(argc, argv, "robot_test");
-    ros::NodeHandle nh;
-    return RUN_ALL_TESTS();
+    struct AutoDiffCalibrationError
+    {
+
+    };
+
+
+    struct CalibrationError
+    {
+
+        bool operator()(double const* const* parameters, double* residuals) const
+        {
+        }
+
+        static ceres::CostFunction* Create()
+        {
+            ceres::DynamicNumericDiffCostFunction<CalibrationError>* cost_function =
+                new ceres::DynamicNumericDiffCostFunction<CalibrationError>(
+                    new CalibrationError());
+            cost_function->AddParameterBlock(5);
+            cost_function->AddParameterBlock(10);
+            cost_function->SetNumResiduals(4);
+        }
+
+    };
 }

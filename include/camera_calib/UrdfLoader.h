@@ -36,20 +36,13 @@
  *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
-#include <gtest/gtest.h>
-#include <ros/ros.h>
-#include <camera_calib/camera_calib.h>
+#pragma once
+#include <robot_calibration/Robot.h>
 
-TEST(ROBOT, LOAD_YAML)
-{
-    camera_calib::Robot robot;
-    robot.loadROS();
-}
+namespace robot_calibration {
 
-int main(int argc, char **argv)
-{
-    testing::InitGoogleTest(&argc, argv);
-    ros::init(argc, argv, "robot_test");
-    ros::NodeHandle nh;
-    return RUN_ALL_TESTS();
+    bool LoadUrdf(Robotd& robot, const std::string& urdf_uri);
+
+    bool LoadUrdfString(Robotd& robot, const std::string& urdf_string);
+
 }
