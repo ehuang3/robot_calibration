@@ -10,6 +10,7 @@ find_package(catkin REQUIRED COMPONENTS
   sensor_msgs
   std_msgs
   std_srvs
+  genmsg
 )
 
 find_package(Ceres REQUIRED)
@@ -50,18 +51,26 @@ find_package(DART REQUIRED)
 ##   * add every package in MSG_DEP_SET to generate_messages(DEPENDENCIES ...)
 
 ## Generate messages in the 'msg' folder
-# add_message_files(
-#   FILES
-#   Message1.msg
-#   Message2.msg
-# )
+add_message_files(
+  DIRECTORY
+  msg
+  FILES
+  CalibrationMeasurement.msg
+  RobotMeasurement.msg
+  CameraMeasurement.msg
+  MarkerMeasurement.msg
+  RobotParameters.msg
+  JointParameters.msg
+  CameraParameters.msg
+)
 
 ## Generate services in the 'srv' folder
-# add_service_files(
-#   FILES
-#   Service1.srv
-#   Service2.srv
-# )
+add_service_files(
+  DIRECTORY
+  srv
+  FILES
+  CalibrateRobot.srv
+)
 
 ## Generate actions in the 'action' folder
 # add_action_files(
@@ -71,10 +80,10 @@ find_package(DART REQUIRED)
 # )
 
 ## Generate added messages and services with any dependencies listed here
-# generate_messages(
-#   DEPENDENCIES
-#   sensor_msgs#   std_msgs
-# )
+generate_messages(
+  DEPENDENCIES
+  sensor_msgs   std_msgs
+)
 
 ###################################
 ## catkin specific configuration ##
@@ -86,10 +95,10 @@ find_package(DART REQUIRED)
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-#  INCLUDE_DIRS include
-#  LIBRARIES camera_calib
-#  CATKIN_DEPENDS roscpp rospy sensor_msgs std_msgs std_srvs
-#  DEPENDS system_lib
+  INCLUDE_DIRS include
+  LIBRARIES camera_calib
+  CATKIN_DEPENDS roscpp rospy sensor_msgs std_msgs std_srvs
+  DEPENDS system_lib
 )
 
 ###########
@@ -100,27 +109,32 @@ catkin_package(
 ## Your package locations should be listed before other locations
 # include_directories(include)
 include_directories(
+  include
   ${CERES_INCLUDE_DIRS}
   ${DART_INCLUDE_DIRS}
   ${catkin_INCLUDE_DIRS}
 )
 
 ## Declare a cpp library
-# add_library(camera_calib
-#   src/${PROJECT_NAME}/camera_calib.cpp
-# )
+add_library(camera_calib
+  src/${PROJECT_NAME}/Camera.cpp
+  src/${PROJECT_NAME}/Marker.cpp
+  src/${PROJECT_NAME}/Robot.cpp
+)
 
 ## Declare a cpp executable
 # add_executable(camera_calib_node src/camera_calib_node.cpp)
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
-# add_dependencies(camera_calib_node camera_calib_generate_messages_cpp)
+add_dependencies(camera_calib camera_calib_generate_messages_cpp)
 
 ## Specify libraries to link a library or executable target against
-# target_link_libraries(camera_calib_node
-#   ${catkin_LIBRARIES}
-# )
+target_link_libraries(camera_calib
+  ${catkin_LIBRARIES}
+  ${DART_LIBRARIES}
+  ${CERES_LIBRARIES}
+)
 
 #############
 ## Install ##
@@ -167,6 +181,9 @@ target_link_libraries(ceres_test ${CERES_LIBRARIES} ${DART_LIBRARIES})
 
 catkin_add_gtest(dart_test src/${PROJECT_NAME}/test/dart_test.cpp)
 target_link_libraries(dart_test ${CERES_LIBRARIES} ${DART_LIBRARIES})
+
+catkin_add_gtest(robot_test src/${PROJECT_NAME}/test/robot_test.cpp)
+target_link_libraries(robot_test camera_calib ${catkin_LIBRARIES} ${CERES_LIBRARIES} ${DART_LIBRARIES})
 
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)

@@ -1,0 +1,102 @@
+calibration:
+  robots:
+    - name: crichton
+      urdf: package://apc_description/urdf/crichton/crichton.urdf
+      groups:
+        - name: crichton_torso
+          calibrate_angle: true
+          calibrate_axis: false
+          joints:
+            - crichton_torso_joint
+        - name: crichton_left_arm
+          calibrate_angle: true
+          calibrate_axis: false
+          joints:
+            - crichton_left_1_joint
+            - crichton_left_2_joint
+            - crichton_left_3_joint
+            - crichton_left_4_joint
+            - crichton_left_5_joint
+            - crichton_left_6_joint
+            - crichton_left_7_joint
+        - name: crichton_right_arm
+          calibrate_angle: true
+          calibrate_axis: false
+          joints:
+            - crichton_right_1_joint
+            - crichton_right_2_joint
+            - crichton_right_3_joint
+            - crichton_right_4_joint
+            - crichton_right_5_joint
+            - crichton_right_6_joint
+            - crichton_right_7_joint
+        - name: crichton_left_hand
+          calibrate_angle: false
+          calibrate_axis: false
+          joints:
+            - crichton_left_finger_22_joint
+            - crichton_left_finger_23_joint
+            - crichton_left_knuckle_joint
+            - crichton_left_finger_12_joint
+            - crichton_left_finger_13_joint
+            - crichton_left_thumb_2_joint
+            - crichton_left_thumb_3_joint
+        - name: crichton_right_hand
+          calibrate_angle: false
+          calibrate_axis: false
+          joints:
+            - crichton_right_finger_22_joint
+            - crichton_right_finger_23_joint
+            - crichton_right_knuckle_joint
+            - crichton_right_finger_12_joint
+            - crichton_right_finger_13_joint
+            - crichton_right_thumb_2_joint
+            - crichton_right_thumb_3_joint
+
+  cameras:
+    - name: crichton_primesense_sr
+      link: crichton_middle_support
+      calibrate:     true
+    - name: crichton_left_flea3
+      link: crichton_left_7_link
+      calibrate:     true
+    - name: crichton_right_flea3
+      link: crichton_right_7_link
+      calibrate:     true
+    - name: nikon
+      link: crichton_origin
+      calibrate:     false
+
+  markers:
+    - name: crichton_left_finger_12_marker
+      link: crichton_left_finger_12_link
+      id: 1
+      calibrate:     true
+    - name: crichton_left_finger_13_marker
+      link: crichton_left_finger_13_link
+      id: 2
+      calibrate:     true
+    - name: crichton_left_finger_22_marker
+      link: crichton_left_finger_22_link
+      id: 3
+      calibrate:     true
+    - name: crichton_left_finger_23_marker
+      link: crichton_left_finger_23_link
+      id: 4
+      calibrate:     true
+    - name: crichton_right_finger_12_marker
+      link: crichton_right_finger_12_link
+      id: 5
+      calibrate:     true
+    - name: crichton_right_finger_13_marker
+      link: crichton_right_finger_13_link
+      id: 6
+      calibrate:     true
+    - name: crichton_right_finger_22_marker
+      link: crichton_right_finger_22_link
+      id: 7
+      calibrate:     true
+    - name: crichton_right_finger_23_marker
+      link: crichton_right_finger_23_link
+      id: 8
+      calibrate:     true

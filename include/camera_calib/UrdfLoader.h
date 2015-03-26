@@ -37,28 +37,12 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 #pragma once
-#include <boost/shared_ptr.hpp>
+#include <robot_calibration/Robot.h>
 
-namespace camera_calib
-{
-    class Marker;
+namespace robot_calibration {
 
-    typedef boost::shared_ptr<Marker> MarkerPtr;
+    bool LoadUrdf(Robotd& robot, const std::string& urdf_uri);
 
-    typedef boost::shared_ptr<const Marker> MarkerConstPtr;
+    bool LoadUrdfString(Robotd& robot, const std::string& urdf_string);
 
-    class Marker
-    {
-    public:
-
-        struct State
-        {
-        };
-
-        Marker();
-        ~Marker();
-
-    protected:
-        State _state;
-    };
 }

@@ -37,28 +37,33 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 #pragma once
-#include <boost/shared_ptr.hpp>
+#include <ceres/ceres.h>
 
 namespace camera_calib
 {
-    class Marker;
 
-    typedef boost::shared_ptr<Marker> MarkerPtr;
-
-    typedef boost::shared_ptr<const Marker> MarkerConstPtr;
-
-    class Marker
+    struct AutoDiffCalibrationError
     {
-    public:
 
-        struct State
+    };
+
+
+    struct CalibrationError
+    {
+
+        bool operator()(double const* const* parameters, double* residuals) const
         {
-        };
+        }
 
-        Marker();
-        ~Marker();
+        static ceres::CostFunction* Create()
+        {
+            ceres::DynamicNumericDiffCostFunction<CalibrationError>* cost_function =
+                new ceres::DynamicNumericDiffCostFunction<CalibrationError>(
+                    new CalibrationError());
+            cost_function->AddParameterBlock(5);
+            cost_function->AddParameterBlock(10);
+            cost_function->SetNumResiduals(4);
+        }
 
-    protected:
-        State _state;
     };
 }

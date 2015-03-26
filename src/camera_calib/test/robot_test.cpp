@@ -36,29 +36,20 @@
  *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
-#pragma once
-#include <boost/shared_ptr.hpp>
+#include <gtest/gtest.h>
+#include <ros/ros.h>
+#include <camera_calib/camera_calib.h>
 
-namespace camera_calib
+TEST(ROBOT, LOAD_YAML)
 {
-    class Marker;
+    camera_calib::Robot robot;
+    robot.loadROS();
+}
 
-    typedef boost::shared_ptr<Marker> MarkerPtr;
-
-    typedef boost::shared_ptr<const Marker> MarkerConstPtr;
-
-    class Marker
-    {
-    public:
-
-        struct State
-        {
-        };
-
-        Marker();
-        ~Marker();
-
-    protected:
-        State _state;
-    };
+int main(int argc, char **argv)
+{
+    testing::InitGoogleTest(&argc, argv);
+    ros::init(argc, argv, "robot_test");
+    ros::NodeHandle nh;
+    return RUN_ALL_TESTS();
 }
