@@ -54,5 +54,7 @@ TEST(DART, LOAD_URDF)
 int main(int argc, char **argv)
 {
     testing::InitGoogleTest(&argc, argv);
+    ros::init(argc, argv, "robot_test");
+    ros::NodeHandle nh;
     return RUN_ALL_TESTS();
 }

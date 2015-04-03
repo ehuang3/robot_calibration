@@ -57,6 +57,7 @@ namespace robot_calibration
         typedef AutoDiffJoint<T> JointT;
         typedef AutoDiffRobot<T> RobotT;
         typedef Eigen::Transform<T,3,Isometry> IsometryT;
+        typedef Eigen::Matrix<T,2,1> Vector2T;
         typedef Eigen::Matrix<T,3,1> Vector3T;
 
         struct State {
@@ -68,6 +69,8 @@ namespace robot_calibration
             Vector3T    axis;           // The joint axis (defined the child link frame).
             JointT*     mimic;          // The joint mimicking this joint.
             bool        fixed;          // The boolean signifying whether the joint is fixed or not.
+            T           upper_limit;    // The joint angle upper limit.
+            T           lower_limit;    // The joint angle lower limit.
             T           angle;          // The joint angle (fixed for each measurement).
             T           angle_offset;   // The parameter defining the joint angle offset to the real zero.
             Vector3T    axis_offset;    // The parameter defining the joint axis offset to the real axis.
@@ -173,7 +176,7 @@ namespace robot_calibration
             RobotT*      robot;         // The robot this link belongs to.
             JointT*      parent;        // The joint this link is a child of.
             JointVectorT children;      // The joints this link is parent to.
-            IsometryT    T_origin;      // The inertial frame origin of this link.
+            IsometryT    T_inertial;    // The inertial frame of this link.
             IsometryT    T_global;      // The global transform to this link.
             bool         dirty;         // The boolean signifying whether the global transform requires updating.
         };

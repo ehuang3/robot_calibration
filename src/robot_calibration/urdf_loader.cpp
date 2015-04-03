@@ -95,18 +95,45 @@ namespace robot_calibration {
 
     bool ExploreLink(Robotd& robot,
                      ModelInterfacePtr model,
-                     UrdfLinkPtr link,
+                     UrdfLinkPtr urdf_link,
                      Linkd& parent) {
         bool success = true;
 
-        for (size_t i = 0; i < link->child_joints.size(); i++) {
-            UrdfJointPtr urdf_joint = link->child_joints[i];
+        // Create all child links and add them to the robot. We want
+        // to create the child links before creating the child joints.
+        for (size_t i = 0; i < urdf_link->child_links.size(); i++) {
+            Linkd* child_link = new Linkd(robot);
+            CopyLinkProperties(*child_link, urdf_link->child_links[i]);
+            robot.addLink(child_link);
+        }
 
+        // Create all child joints and add them to the robot.
+        for (size_t i = 0; i < link->child_joints.size(); i++) {
+            Jointd* child_joint = new Jointd(robot);
+            CopyJointProperties(*child_joint, urdf_link->child_joints[i]);
+        }
+
+        // Traverse child links and add their descendants to the
+        // kinematic tree.
+        for (size_t i = 0; i < link->child_links.size(); i++) {
+            ExploreLink();
         }
     }
 
     bool CopyLinkProperties(Linkd& link, UrdfLinkPtr ulink) {
+        Linkd::State& link_state = link.getState();
 
+        link_state.link_name = ulink->name;
+
+        Eigen::Vector3d t(ulink->inertial->origin.position.x,
+                          ulink->inertial->origin.position.y,
+                          ulink->inertial->origin.position.z);
+        Eigen::Quaterniond q(ulink->inertial->origin.rotation.w,
+                             ulink->inertial->origin.rotation.x,
+                             ulink->inertial->origin.rotation.y,
+                             ulink->inertial->origin.rotation.z);
+        joint_state.T_inertial.translation() = t;
+        joint_state.T_inertial.linear() = q;
     }
 
     bool CopyJointProperties(Jointd& joint, UrdfJointPtr ujoint) {
@@ -133,7 +160,17 @@ namespace robot_calibration {
             return false;
         }
 
-       // https://github.com/mxgrey/akin/blob/master/utils/urdfAkin/src/urdfParsing.cpp#L55
+        joint_state.joint_axis = Eigen::Vector3d(ujoint->axis.x, ujoint->axis.y, ujoint->axis.z);
+        if (joint_state.joint_axis.norm() == 0)
+            joint_state.joint_axis = Eigen::Vector3d::UnitZ();
+
+        if (ujoint->limits)
+        {
+            joint_state.upper_limit = ujoint->limits->upper;
+            joint_state.lower_limit = ujoint->limits->lower;
+        }
+
+        return true;
     }
 
 

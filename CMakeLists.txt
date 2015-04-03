@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(camera_calib)
+project(robot_calibration)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
@@ -96,7 +96,7 @@ generate_messages(
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
   INCLUDE_DIRS include
-  LIBRARIES camera_calib
+  LIBRARIES robot_calibration
   CATKIN_DEPENDS roscpp rospy sensor_msgs std_msgs std_srvs
   DEPENDS system_lib
 )
@@ -116,25 +116,25 @@ include_directories(
 )
 
 ## Declare a cpp library
-add_library(camera_calib
-  src/${PROJECT_NAME}/Camera.cpp
-  src/${PROJECT_NAME}/Marker.cpp
-  src/${PROJECT_NAME}/Robot.cpp
-)
+# add_library(robot_calibration
+#   src/${PROJECT_NAME}/Camera.cpp
+#   src/${PROJECT_NAME}/Marker.cpp
+#   src/${PROJECT_NAME}/Robot.cpp
+# )
 
 ## Declare a cpp executable
-# add_executable(camera_calib_node src/camera_calib_node.cpp)
+# add_executable(robot_calibration_node src/robot_calibration_node.cpp)
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
-add_dependencies(camera_calib camera_calib_generate_messages_cpp)
+# add_dependencies(robot_calibration robot_calibration_generate_messages_cpp)
 
 ## Specify libraries to link a library or executable target against
-target_link_libraries(camera_calib
-  ${catkin_LIBRARIES}
-  ${DART_LIBRARIES}
-  ${CERES_LIBRARIES}
-)
+# target_link_libraries(robot_calibration
+#   ${catkin_LIBRARIES}
+#   ${DART_LIBRARIES}
+#   ${CERES_LIBRARIES}
+# )
 
 #############
 ## Install ##
@@ -151,7 +151,7 @@ target_link_libraries(camera_calib
 # )
 
 ## Mark executables and/or libraries for installation
-# install(TARGETS camera_calib camera_calib_node
+# install(TARGETS robot_calibration robot_calibration_node
 #   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 #   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 #   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
@@ -182,8 +182,8 @@ target_link_libraries(ceres_test ${CERES_LIBRARIES} ${DART_LIBRARIES})
 catkin_add_gtest(dart_test src/${PROJECT_NAME}/test/dart_test.cpp)
 target_link_libraries(dart_test ${CERES_LIBRARIES} ${DART_LIBRARIES})
 
-catkin_add_gtest(robot_test src/${PROJECT_NAME}/test/robot_test.cpp)
-target_link_libraries(robot_test camera_calib ${catkin_LIBRARIES} ${CERES_LIBRARIES} ${DART_LIBRARIES})
+# catkin_add_gtest(robot_test src/${PROJECT_NAME}/test/robot_test.cpp)
+# target_link_libraries(robot_test robot_calibration ${catkin_LIBRARIES} ${CERES_LIBRARIES} ${DART_LIBRARIES})
 
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)
