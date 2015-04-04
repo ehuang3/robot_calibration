@@ -38,12 +38,13 @@
  *********************************************************************/
 #include <gtest/gtest.h>
 #include <ros/ros.h>
-#include <camera_calib/camera_calib.h>
+#include <robot_calibration/robot.h>
+#include <robot_calibration/urdf_loader.h>
 
-TEST(ROBOT, LOAD_YAML)
+TEST(ROBOT, LOAD_URDF)
 {
-    camera_calib::Robot robot;
-    robot.loadROS();
+    robot_calibration::Robotd* robot = new robot_calibration::Robotd;
+    robot_calibration::LoadUrdf(robot, "package://robot_calibration/config/example.urdf");
 }
 
 int main(int argc, char **argv)

@@ -37,12 +37,13 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 #pragma once
-#include <robot_calibration/Robot.h>
+#include <robot_calibration/robot.h>
+
 
 namespace robot_calibration {
 
-    bool LoadUrdf(Robotd& robot, const std::string& urdf_uri);
+    bool LoadUrdf(Robotd* robot, const std::string& urdf_uri);
 
-    bool LoadUrdfString(Robotd& robot, const std::string& urdf_string);
+    bool LoadUrdfString(Robotd* robot, const std::string& urdf_string);
 
 }

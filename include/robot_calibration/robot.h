@@ -37,10 +37,11 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 #pragma once
+#include <vector>
+#include <map>
 #include <boost/shared_ptr.hpp>
-#include <camera_calib/Camera.h>
-#include <camera_calib/Marker.h>
-#include <camera_calib/CalibrateRobot.h>
+#include <Eigen/Dense>
+#include <robot_calibration/exception.h>
 
 
 namespace robot_calibration
@@ -56,7 +57,7 @@ namespace robot_calibration
         typedef AutoDiffLink<T> LinkT;
         typedef AutoDiffJoint<T> JointT;
         typedef AutoDiffRobot<T> RobotT;
-        typedef Eigen::Transform<T,3,Isometry> IsometryT;
+        typedef Eigen::Transform<T,3,Eigen::Isometry> IsometryT;
         typedef Eigen::Matrix<T,2,1> Vector2T;
         typedef Eigen::Matrix<T,3,1> Vector3T;
 
@@ -98,6 +99,10 @@ namespace robot_calibration
 
         State& getState() {
             return _state;
+        }
+
+        const std::string& getName() {
+            return _state.joint_name;
         }
 
         bool isDirty() {
@@ -168,7 +173,7 @@ namespace robot_calibration
         typedef AutoDiffJoint<T> JointT;
         typedef AutoDiffRobot<T> RobotT;
         typedef std::vector<JointT*> JointVectorT;
-        typedef Eigen::Transform<T,3,Isometry> IsometryT;
+        typedef Eigen::Transform<T,3,Eigen::Isometry> IsometryT;
         typedef Eigen::Matrix<T,3,1> Vector3T;
 
         struct State {
@@ -197,6 +202,10 @@ namespace robot_calibration
 
         State& getState() {
             return _state;
+        }
+
+        const std::string& getName() {
+            return _state.link_name;
         }
 
         void setDirty(bool dirty = true) {
@@ -238,13 +247,13 @@ namespace robot_calibration
         typedef std::map<std::string, LinkT*> LinkNameMapT;
         typedef std::map<int, JointT*> JointIndexMapT;
         typedef std::map<int, LinkT*> LinkIndexMapT;
-        typedef Eigen::Transform<T,3,Isometry> IsometryT;
+        typedef Eigen::Transform<T,3,Eigen::Isometry> IsometryT;
         typedef Eigen::Matrix<T,3,1> Vector3T;
 
         struct State {
             std::string    robot_name;
 
-            LinkT* root;
+            LinkT* root_link;
 
             JointVectorT   joints;
             LinkVectorT    links;
@@ -254,7 +263,6 @@ namespace robot_calibration
             LinkNameMapT   link_name_map;
             JointIndexMapT joint_index_map;
             LinkIndexMapT  link_index_map;
-
         };
 
         AutoDiffRobot() {
@@ -264,15 +272,78 @@ namespace robot_calibration
         }
 
         // Disable copy constructor and assignment operator.
-        AutoDiffLink(const AutoDiffLink<T>&) = delete;
-        AutoDiffLink<T>& operator=(const AutoDiffLink<T>&) = delete;
+        AutoDiffRobot(const AutoDiffRobot<T>&) = delete;
+        AutoDiffRobot<T>& operator=(const AutoDiffRobot<T>&) = delete;
 
         const std::string& getName() const {
             return _state.robot_name;
         }
 
+        void setName(const std::string& name) {
+            _state.robot_name = name;
+        }
+
         int getNumLinks() const {
             return _state.links.size();
+        }
+
+        LinkT* getRootLink() {
+            return _state.root_link;
+        }
+
+        void setRootLink(LinkT* link) {
+            _state.root_link = link;
+            addLink(link);
+        }
+
+        LinkT* getLink(const std::string& link_name) {
+            if (_state.link_name_map.count(link_name) == 0)
+                return NULL;
+            return _state.link_name_map[link_name];
+        }
+
+        LinkT* getLink(int index) {
+            return _state.links[index];
+        }
+
+        void addLink(LinkT* link) {
+            ROBOT_CALIBRATION_ASSERT(std::find(_state.links.begin(), _state.links.end(), link) == _state.links.end(),
+                                     "Link %s already exists in robot %s",
+                                     link->getName().c_str(), _state.robot_name.c_str());
+            typename LinkT::State& link_state = link->getState();
+            link_state.robot = this;
+            link_state.parent = NULL;
+            _state.links.push_back(link);
+            _state.link_name_map[link->getName()] = link;
+        }
+
+        JointT* getJoint(const std::string& joint_name) {
+            if (_state.joint_name_map.count(joint_name) == 0)
+                return NULL;
+            return _state.joint_name_map[joint_name];
+        }
+
+        JointT* getJoint(int index) {
+            return _state.joints[index];
+        }
+
+        void addJoint(JointT* joint, LinkT* parent, LinkT* child) {
+            ROBOT_CALIBRATION_ASSERT(std::find(_state.joints.begin(), _state.joints.end(), joint) == _state.joints.end(),
+                                     "Joint %s already exists in robot %s",
+                                     joint->getName().c_str(), _state.robot_name.c_str());
+            // Fill out joint information.
+            typename JointT::State& joint_state = joint->getState();
+            joint_state.parent = parent;
+            joint_state.child = child;
+            joint_state.robot = this;
+            _state.joints.push_back(joint);
+            _state.joint_name_map[joint->getName()] = joint;
+            // Fill out parent link information.
+            typename LinkT::State& parent_state = parent->getState();
+            parent_state.children.push_back(joint);
+            // Fill out child link information.
+            typename LinkT::State& child_state = child->getState();
+            child_state.parent = joint;
         }
 
         const State& getState() const {
@@ -294,8 +365,4 @@ namespace robot_calibration
     typedef AutoDiffRobot<double> Robotd;
     typedef AutoDiffJoint<double> Jointd;
     typedef AutoDiffLink<double>  Linkd;
-
-    Robotd* LoadRobotd();
-    Jointd* LoadJointd();
-    Linkd*  LoadLinkd();
 }
