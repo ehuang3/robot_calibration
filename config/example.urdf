@@ -244,7 +244,7 @@
   </joint>
   <joint name="crichton_left_1_joint" type="revolute">
     <!-- <origin xyz="0 0.1375 0" rpy="1.57 3.1416 0"/> -->
-    <origin rpy="1.57 3.1416 0" xyz="0 0.12 0"/>
+    <origin rpy="1.5707963265 3.141592653 0" xyz="0 0.12 0"/>
     <parent link="crichton_left_0_link"/>
     <child link="crichton_left_1_link"/>
     <axis xyz="0 0 1"/>
@@ -252,7 +252,7 @@
     <limit effort="370" lower="-3.14" upper="3.14" velocity="2.0"/>
   </joint>
   <joint name="crichton_left_2_joint" type="revolute">
-    <origin rpy="-1.57 0 0" xyz="0 0 -0.18"/>
+    <origin rpy="-1.5707963265 0 0" xyz="0 0 -0.18"/>
     <parent link="crichton_left_1_link"/>
     <child link="crichton_left_2_link"/>
     <axis xyz="0 0 -1"/>
@@ -260,7 +260,7 @@
     <limit effort="370" lower="-1.97" upper="1.97" velocity="2.0"/>
   </joint>
   <joint name="crichton_left_3_joint" type="revolute">
-    <origin rpy="1.57 0 0" xyz="0 0 0"/>
+    <origin rpy="1.5707963265 0 0" xyz="0 0 0"/>
     <parent link="crichton_left_2_link"/>
     <child link="crichton_left_3_link"/>
     <axis xyz="0 0 1"/>
@@ -268,7 +268,7 @@
     <limit effort="176" lower="-3.14" upper="3.14" velocity="2.0"/>
   </joint>
   <joint name="crichton_left_4_joint" type="revolute">
-    <origin rpy="-1.57 0 0" xyz="0 0 -0.328"/>
+    <origin rpy="-1.5707963265 0 0" xyz="0 0 -0.328"/>
     <parent link="crichton_left_3_link"/>
     <child link="crichton_left_4_link"/>
     <axis xyz="0 0 -1"/>
@@ -276,7 +276,7 @@
     <limit effort="176" lower="-2.08208" upper="2.08208" velocity="2.0"/>
   </joint>
   <joint name="crichton_left_5_joint" type="revolute">
-    <origin rpy="1.57 0 0" xyz="0 0 0"/>
+    <origin rpy="1.5707963265 0 0" xyz="0 0 0"/>
     <parent link="crichton_left_4_link"/>
     <child link="crichton_left_5_link"/>
     <axis xyz="0 0 1"/>
@@ -284,7 +284,7 @@
     <limit effort="41.6" lower="-3.14" upper="3.14" velocity="2.0"/>
   </joint>
   <joint name="crichton_left_6_joint" type="revolute">
-    <origin rpy="1.57 0 0" xyz="0 0 -0.323"/>
+    <origin rpy="1.5707963265 0 0" xyz="0 0 -0.323"/>
     <parent link="crichton_left_5_link"/>
     <child link="crichton_left_6_link"/>
     <axis xyz="0 0 -1"/>
@@ -292,7 +292,7 @@
     <limit effort="20.1" lower="-1.8" upper="1.8" velocity="2.0"/>
   </joint>
   <joint name="crichton_left_7_joint" type="revolute">
-    <origin rpy="-1.57 0 0" xyz="0 -0.1672 0"/>
+    <origin rpy="-1.5707963265 0 0" xyz="0 -0.1672 0"/>
     <parent link="crichton_left_6_link"/>
     <child link="crichton_left_7_link"/>
     <axis xyz="0 0 -1"/>
@@ -579,7 +579,7 @@
   </joint>
   <joint name="crichton_right_1_joint" type="revolute">
     <!-- <origin xyz="0 0.1375 0" rpy="1.57 3.1416 0"/> -->
-    <origin rpy="1.57 3.1416 0" xyz="0 0.12 0"/>
+    <origin rpy="1.5707963265 3.141592653 0" xyz="0 0.12 0"/>
     <parent link="crichton_right_0_link"/>
     <child link="crichton_right_1_link"/>
     <axis xyz="0 0 1"/>
@@ -587,7 +587,7 @@
     <limit effort="370" lower="-3.14" upper="3.14" velocity="2.0"/>
   </joint>
   <joint name="crichton_right_2_joint" type="revolute">
-    <origin rpy="-1.57 0 0" xyz="0 0 -0.18"/>
+    <origin rpy="-1.5707963265 0 0" xyz="0 0 -0.18"/>
     <parent link="crichton_right_1_link"/>
     <child link="crichton_right_2_link"/>
     <axis xyz="0 0 -1"/>
@@ -595,7 +595,7 @@
     <limit effort="370" lower="-1.97" upper="1.97" velocity="2.0"/>
   </joint>
   <joint name="crichton_right_3_joint" type="revolute">
-    <origin rpy="1.57 0 0" xyz="0 0 0"/>
+    <origin rpy="1.5707963265 0 0" xyz="0 0 0"/>
     <parent link="crichton_right_2_link"/>
     <child link="crichton_right_3_link"/>
     <axis xyz="0 0 1"/>
@@ -603,7 +603,7 @@
     <limit effort="176" lower="-3.14" upper="3.14" velocity="2.0"/>
   </joint>
   <joint name="crichton_right_4_joint" type="revolute">
-    <origin rpy="-1.57 0 0" xyz="0 0 -0.328"/>
+    <origin rpy="-1.5707963265 0 0" xyz="0 0 -0.328"/>
     <parent link="crichton_right_3_link"/>
     <child link="crichton_right_4_link"/>
     <axis xyz="0 0 -1"/>
@@ -611,7 +611,7 @@
     <limit effort="176" lower="-2.08208" upper="2.08208" velocity="2.0"/>
   </joint>
   <joint name="crichton_right_5_joint" type="revolute">
-    <origin rpy="1.57 0 0" xyz="0 0 0"/>
+    <origin rpy="1.5707963265 0 0" xyz="0 0 0"/>
     <parent link="crichton_right_4_link"/>
     <child link="crichton_right_5_link"/>
     <axis xyz="0 0 1"/>
@@ -619,7 +619,7 @@
     <limit effort="41.6" lower="-3.14" upper="3.14" velocity="2.0"/>
   </joint>
   <joint name="crichton_right_6_joint" type="revolute">
-    <origin rpy="1.57 0 0" xyz="0 0 -0.323"/>
+    <origin rpy="1.5707963265 0 0" xyz="0 0 -0.323"/>
     <parent link="crichton_right_5_link"/>
     <child link="crichton_right_6_link"/>
     <axis xyz="0 0 -1"/>
@@ -627,7 +627,7 @@
     <limit effort="20.1" lower="-1.8" upper="1.8" velocity="2.0"/>
   </joint>
   <joint name="crichton_right_7_joint" type="revolute">
-    <origin rpy="-1.57 0 0" xyz="0 -0.1672 0"/>
+    <origin rpy="-1.5707963265 0 0" xyz="0 -0.1672 0"/>
     <parent link="crichton_right_6_link"/>
     <child link="crichton_right_7_link"/>
     <axis xyz="0 0 -1"/>
@@ -955,7 +955,7 @@
     </collision>
   </link>
   <joint name="crichton_left_thumb_1_joint" type="fixed">
-    <origin rpy="0 0 -1.5708" xyz="0 0.03811 0.0745 "/>
+    <origin rpy="0 0 -1.5707963265" xyz="0 0.03811 0.0745 "/>
     <parent link="crichton_left_palm_link"/>
     <child link="crichton_left_thumb_1_link"/>
   </joint>
@@ -1443,7 +1443,7 @@
     </collision>
   </link>
   <joint name="crichton_right_thumb_1_joint" type="fixed">
-    <origin rpy="0 0 -1.5708" xyz="0 0.03811 0.0745 "/>
+    <origin rpy="0 0 -1.5707963265" xyz="0 0.03811 0.0745 "/>
     <parent link="crichton_right_palm_link"/>
     <child link="crichton_right_thumb_1_link"/>
   </joint>

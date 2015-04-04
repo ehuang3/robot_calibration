@@ -76,12 +76,13 @@ namespace robot_calibration
             T           angle;          // The joint angle (fixed for each measurement).
             T           angle_offset;   // The parameter defining the joint angle offset to the real zero.
             Vector3T    axis_offset;    // The parameter defining the joint axis offset to the real axis.
-            IsometryT   T_cache;        // The transform from parent link to child link at these parameter values.
-            bool        dirty;          // The boolean signifying whether the cached transform requires updating.
+            IsometryT   T_joint;        // The transform from parent link to child link at these parameter values.
+            bool        dirty;          // The boolean signifying whether the joint transform requires updating.
             IsometryT   T_global;       // The global transform to the child link for the given parameter values.
         };
 
         AutoDiffJoint() {
+            reset();
         }
 
         ~AutoDiffJoint() {
@@ -93,6 +94,25 @@ namespace robot_calibration
         // Disable copy constructor and assignment operator.
         AutoDiffJoint(const AutoDiffJoint<T>&) = delete;
         AutoDiffJoint<T>& operator=(const AutoDiffJoint<T>&) = delete;
+
+        void reset() {
+            _state.joint_name = "";
+            _state.parent = NULL;
+            _state.child = NULL;
+            _state.robot = NULL;
+            _state.T_origin = IsometryT::Identity();
+            _state.axis = Vector3T::UnitZ();
+            _state.mimic = NULL;
+            _state.fixed = true;
+            _state.upper_limit = T(0);
+            _state.lower_limit = T(0);
+            _state.angle = T(0);
+            _state.angle_offset = T(0);
+            _state.axis_offset = Vector3T::Zero();
+            _state.T_joint = IsometryT::Identity();
+            _state.dirty = true;
+            _state.T_global = IsometryT::Identity();
+        }
 
         const State& getState() const {
             return _state;
@@ -108,6 +128,20 @@ namespace robot_calibration
 
         bool isDirty() {
             return _state.dirty;
+        }
+
+        bool setAngle(T angle) {
+            if (_state.fixed)
+                return false;
+            ROBOT_CALIBRATION_ASSERT(angle <= _state.upper_limit,
+                                     "Joint %s angle above upper limit %f",
+                                     _state.joint_name.c_str(), _state.upper_limit);
+            ROBOT_CALIBRATION_ASSERT(angle >= _state.lower_limit,
+                                     "Joint %s angle below lower limit %f",
+                                     _state.joint_name.c_str(), _state.lower_limit);
+            _state.angle = angle;
+            _state.dirty = true;
+            return true;
         }
 
         bool setAngleOffset(T* offset) {
@@ -138,7 +172,7 @@ namespace robot_calibration
         }
 
         void update() {
-            // If the cached transform is dirty, recompute it with the
+            // If the jointd transform is dirty, recompute it with the
             // new parameters.
             if (_state.dirty) {
                 IsometryT T_joint = _state.T_origin;
@@ -150,14 +184,15 @@ namespace robot_calibration
                 T_joint.rotate(AngleAxisT(_state.angle + _state.angle_offset, _state.axis));
 
                 // Cache new parent to child frame transform.
-                _state.T_cache = T_joint;
+                _state.T_joint = T_joint;
 
                 _state.dirty = false;
             }
 
             // Compute the global transform.
             const IsometryT& T_parent = _state.parent->getGlobalTransform();
-            _state.T_global = _state.T_cache * T_parent;
+            _state.T_global = T_parent * _state.T_joint;
+            // _state.T_global = _state.T_joint * T_parent;
 
             // Update the child.
             _state.child->update();
@@ -213,7 +248,7 @@ namespace robot_calibration
             _state.dirty = dirty;
         }
 
-        const IsometryT& getGlobalTransform() const
+        IsometryT getGlobalTransform() const
         {
             if (_state.parent == NULL)
                 return IsometryT::Identity();
@@ -253,20 +288,16 @@ namespace robot_calibration
         typedef std::map<int, LinkT*> LinkIndexMapT;
         typedef Eigen::Transform<T,3,Eigen::Isometry> IsometryT;
         typedef Eigen::Matrix<T,3,1> Vector3T;
+        typedef Eigen::Matrix<T,Eigen::Dynamic,1> VectorXT;
 
         struct State {
             std::string    robot_name;
-
-            LinkT* root_link;
-
-            JointVectorT   joints;
+            LinkT*         root_link;
             LinkVectorT    links;
+            JointVectorT   joints;
             JointVectorT   active_joints;
-
             JointNameMapT  joint_name_map;
             LinkNameMapT   link_name_map;
-            JointIndexMapT joint_index_map;
-            LinkIndexMapT  link_index_map;
         };
 
         AutoDiffRobot() {
@@ -291,6 +322,10 @@ namespace robot_calibration
             return _state.links.size();
         }
 
+        int getNumActiveJoints() const {
+            return _state.active_joints.size();
+        }
+
         LinkT* getRootLink() {
             return _state.root_link;
         }
@@ -308,6 +343,10 @@ namespace robot_calibration
 
         LinkT* getLink(int index) {
             return _state.links[index];
+        }
+
+        LinkVectorT getLinks() {
+            return _state.links;
         }
 
         void addLink(LinkT* link) {
@@ -331,6 +370,14 @@ namespace robot_calibration
             return _state.joints[index];
         }
 
+        JointVectorT getJoints() {
+            return _state.joints;
+        }
+
+        JointVectorT getActiveJoints() {
+            return _state.active_joints;
+        }
+
         void addJoint(JointT* joint, LinkT* parent, LinkT* child) {
             ROBOT_CALIBRATION_ASSERT(std::find(_state.joints.begin(), _state.joints.end(), joint) == _state.joints.end(),
                                      "Joint %s already exists in robot %s",
@@ -342,6 +389,8 @@ namespace robot_calibration
             joint_state.robot = this;
             _state.joints.push_back(joint);
             _state.joint_name_map[joint->getName()] = joint;
+            if (!joint_state.fixed)
+                _state.active_joints.push_back(joint);
             // Fill out parent link information.
             typename LinkT::State& parent_state = parent->getState();
             parent_state.children.push_back(joint);
@@ -356,6 +405,38 @@ namespace robot_calibration
 
         State& getState() {
             return _state;
+        }
+
+        void getJointLimits(VectorXT& upper, VectorXT& lower) {
+            int num_active = _state.active_joints.size();
+            upper.resize(num_active);
+            lower.resize(num_active);
+            for (int i = 0; i < num_active; i++) {
+                typename JointT::State& joint_state = _state.active_joints[i]->getState();
+                upper[i] = joint_state.upper_limit;
+                lower[i] = joint_state.lower_limit;
+            }
+        }
+
+        void setJointAngles(const T* angles) {
+            for (int i = 0; i < _state.active_joints.size(); i++) {
+                _state.active_joints[i]->setAngle(angles[i]);
+            }
+        }
+
+        void setJointAngles(const std::vector<std::string>& joint_names, const T* angles) {
+            for (int i = 0; i < joint_names.size(); i++) {
+                JointT* joint = getJoint(joint_names[i]);
+                joint->setAngle(angles[i]);
+            }
+        }
+
+        IsometryT getGlobalTransform(const std::string& frame) {
+            if (_state.joint_name_map.find(frame) != _state.joint_name_map.end())
+                return _state.joint_name_map[frame]->getGlobalTransform();
+            if (_state.link_name_map.find(frame) != _state.link_name_map.end())
+                return _state.link_name_map[frame]->getGlobalTransform();
+            return IsometryT::Identity();
         }
 
         void update() {

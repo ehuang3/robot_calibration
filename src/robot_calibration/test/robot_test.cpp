@@ -40,12 +40,127 @@
 #include <ros/ros.h>
 #include <robot_calibration/robot.h>
 #include <robot_calibration/urdf_loader.h>
+#include <dart/utils/utils.h>
+#include <dart/dynamics/dynamics.h>
+
 
 TEST(ROBOT, LOAD_URDF)
 {
     robot_calibration::Robotd* robot = new robot_calibration::Robotd;
     robot_calibration::LoadUrdf(robot, "package://robot_calibration/config/example.urdf");
     robot->update();
+}
+
+TEST(ROBOT, SET_JOINT_ANGLES)
+{
+    robot_calibration::Robotd* robot = new robot_calibration::Robotd;
+    robot_calibration::LoadUrdf(robot, "package://robot_calibration/config/example.urdf");
+    Eigen::VectorXd upper, lower;
+    robot->getJointLimits(upper, lower);
+    Eigen::VectorXd angles = Eigen::VectorXd::Random(robot->getNumActiveJoints());
+    for (int i = 0; i < angles.size(); i++) {
+        angles[i] = angles[i] * (upper[i] - lower[i]) / 2 + (upper[i] - lower[i]) / 2 + lower[i];
+    }
+    robot->setJointAngles(angles.data());
+    robot->update();
+    for (int i = 0; i < angles.size(); i++) {
+        angles[i] = upper[i];
+    }
+    robot->setJointAngles(angles.data());
+    robot->update();
+}
+
+TEST(ROBOT, GET_GLOBAL_TRANSFORM)
+{
+    robot_calibration::Robotd* robot = new robot_calibration::Robotd;
+    robot_calibration::LoadUrdf(robot, "package://robot_calibration/config/example.urdf");
+    Eigen::VectorXd upper, lower;
+    robot->getJointLimits(upper, lower);
+    Eigen::VectorXd angles = Eigen::VectorXd::Random(robot->getNumActiveJoints());
+    // for (int i = 0; i < angles.size(); i++) {
+    //     angles[i] = angles[i] * (upper[i] - lower[i]) / 2 + (upper[i] - lower[i]) / 2 + lower[i];
+    // }
+    angles.setZero();
+    robot->setJointAngles(angles.data());
+    robot->update();
+    std::vector<robot_calibration::Jointd*> joints = robot->getJoints();
+    // for (int i = 0; i < joints.size(); i++) {
+    //     std::cout << joints[i]->getName() << std::endl;
+    //     std::cout << joints[i]->getGlobalTransform().matrix() << std::endl;
+    // }
+}
+
+TEST(ROBOT, COMPARE_WITH_DART)
+{
+    std::string package_path = "/home/ehuang/catkin_ws/src/apc_ros/";
+    std::string urdf_path    = "/home/ehuang/catkin_ws/src/robot_calibration/config/example.urdf";
+    dart::utils::DartLoader dart_loader;
+    dart_loader.setPackageDirectory(package_path);
+    dart::dynamics::Skeleton* dart_robot = dart_loader.parseSkeleton(urdf_path);
+    dart_robot->init();
+    dart_robot->computeForwardKinematics();
+    int num_dofs = dart_robot->getNumDofs();
+    // std::cout << num_dofs << std::endl;
+    // for (int i = 0; i < num_dofs; i++)
+    // {
+    //     std::cout << dart_robot->getJoint(i)->getName() << std::endl;
+    //     std::cout << dart_robot->getJoint(i)->getChildBodyNode()->getTransform().matrix() << std::endl;
+    // }
+
+    robot_calibration::Robotd* robot = new robot_calibration::Robotd;
+    robot_calibration::LoadUrdf(robot, "package://robot_calibration/config/example.urdf");
+    Eigen::VectorXd upper, lower;
+    robot->getJointLimits(upper, lower);
+    Eigen::VectorXd angles = Eigen::VectorXd::Random(robot->getNumActiveJoints());
+    // for (int i = 0; i < angles.size(); i++) {
+    //     angles[i] = angles[i] * (upper[i] - lower[i]) / 2 + (upper[i] - lower[i]) / 2 + lower[i];
+    // }
+    angles.setZero();
+    robot->setJointAngles(angles.data());
+    robot->update();
+    std::vector<robot_calibration::Jointd*> joints = robot->getActiveJoints();
+
+    for (int i = 0; i < num_dofs; i++) {
+        std::string joint_name = dart_robot->getJoint(i)->getName();
+        Eigen::Matrix4d T_dart = dart_robot->getJoint(i)->getChildBodyNode()->getTransform().matrix();
+        // std::cout << joint_name << std::endl;
+        if (!robot->getJoint(joint_name))
+            continue;
+        Eigen::Matrix4d T_joint = robot->getJoint(joint_name)->getGlobalTransform().matrix();
+        for (int r = 0; r < T_dart.rows(); r++)
+            for (int c = 0; c < T_dart.cols(); c++)
+                ASSERT_NEAR(T_dart(r,c), T_joint(r,c), 1e-7);
+    }
+
+    angles.setRandom();
+    for (int i = 0; i < angles.size(); i++) {
+        angles[i] = angles[i] * (upper[i] - lower[i]) / 2 + (upper[i] - lower[i]) / 2 + lower[i];
+    }
+    robot->setJointAngles(angles.data());
+    robot->update();
+    for (int i = 0; i < joints.size(); i++) {
+        std::string joint_name = joints[i]->getName();
+        dart_robot->getJoint(joint_name)->getDof(0)->setPosition(angles[i]);
+    }
+    dart_robot->computeForwardKinematics();
+
+    for (int i = 0; i < num_dofs; i++) {
+        std::string joint_name = dart_robot->getJoint(i)->getName();
+        Eigen::Matrix4d T_dart = dart_robot->getJoint(i)->getChildBodyNode()->getTransform().matrix();
+
+        if (!robot->getJoint(joint_name))
+            continue;
+        Eigen::Matrix4d T_joint = robot->getJoint(joint_name)->getGlobalTransform().matrix();
+
+        // std::cout << joint_name << std::endl;
+        // std::cout << T_dart.matrix() << std::endl;
+        // std::cout << T_joint.matrix() << std::endl;
+
+        for (int r = 0; r < T_dart.rows(); r++)
+            for (int c = 0; c < T_dart.cols(); c++)
+                ASSERT_NEAR(T_dart(r,c), T_joint(r,c), 1e-7);
+    }
+
 }
 
 int main(int argc, char **argv)
