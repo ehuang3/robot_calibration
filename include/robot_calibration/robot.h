@@ -60,6 +60,7 @@ namespace robot_calibration
         typedef Eigen::Transform<T,3,Eigen::Isometry> IsometryT;
         typedef Eigen::Matrix<T,2,1> Vector2T;
         typedef Eigen::Matrix<T,3,1> Vector3T;
+        typedef Eigen::AngleAxis<T> AngleAxisT;
 
         struct State {
             std::string joint_name;     // The joint's name.
@@ -146,7 +147,7 @@ namespace robot_calibration
                 T_joint.translate(_state.axis_offset);
 
                 // Rotate about the joint axis by joint angle plus joint offset.
-                T_joint.rotate(AngleAxisT(_state.axis, _state.angle + _state.angle_offset));
+                T_joint.rotate(AngleAxisT(_state.angle + _state.angle_offset, _state.axis));
 
                 // Cache new parent to child frame transform.
                 _state.T_cache = T_joint;
@@ -223,7 +224,10 @@ namespace robot_calibration
 
         void update() {
             // Compute the global transform.
-            _state.T_global = _state.parent->getGlobalTransform();
+            if (_state.parent)
+                _state.T_global = _state.parent->getGlobalTransform();
+            else
+                _state.T_global = IsometryT::Identity();
             _state.dirty = false;
 
             // Update the children.
@@ -355,7 +359,7 @@ namespace robot_calibration
         }
 
         void update() {
-            _state.root->update();
+            _state.root_link->update();
         }
 
     protected:

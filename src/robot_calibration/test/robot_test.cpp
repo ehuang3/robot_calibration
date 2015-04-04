@@ -45,6 +45,7 @@ TEST(ROBOT, LOAD_URDF)
 {
     robot_calibration::Robotd* robot = new robot_calibration::Robotd;
     robot_calibration::LoadUrdf(robot, "package://robot_calibration/config/example.urdf");
+    robot->update();
 }
 
 int main(int argc, char **argv)
