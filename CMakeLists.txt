@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(robot_calibration)
 
-set(CMAKE_CXX_FLAGS "-std=c++0x ${CMAKE_CXX_FLAGS}")
+# set(CMAKE_CXX_FLAGS "-std=c++0x ${CMAKE_CXX_FLAGS}")
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
@@ -14,6 +14,7 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   std_srvs
   genmsg
+  geometric_shapes
 )
 
 find_package(Ceres REQUIRED)
@@ -100,7 +101,7 @@ generate_messages(
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES robot_calibration
-  CATKIN_DEPENDS roscpp roslib rospy sensor_msgs std_msgs std_srvs
+  CATKIN_DEPENDS roscpp roslib rospy sensor_msgs std_msgs std_srvs geometric_shapes
   DEPENDS system_lib
 )
 

@@ -8,6 +8,8 @@
 #include <boost/xpressive/xpressive.hpp>
 #include <boost/shared_ptr.hpp>
 #include <fstream>
+#include <geometric_shapes/shape_operations.h>
+
 
 namespace robot_calibration {
 
@@ -15,9 +17,11 @@ namespace robot_calibration {
     typedef boost::shared_ptr<urdf::Link> UrdfLinkPtr;
     typedef boost::shared_ptr<urdf::Joint> UrdfJointPtr;
 
-    bool ExploreLink(Robotd* robot, ModelInterfacePtr model, UrdfLinkPtr link, Linkd* parent);
+    bool ExploreLink(Robotd* robot, ModelInterfacePtr model, UrdfLinkPtr link, Linkd* parent, bool load_meshes);
 
-    bool CopyLinkProperties(Linkd* link, UrdfLinkPtr ulink);
+    bool CopyLinkProperties(Linkd* link, UrdfLinkPtr ulink, bool load_meshes);
+
+    shapes::ShapePtr ConstructShape(const urdf::Geometry *geom);
 
     bool CopyJointProperties(Jointd* joint, UrdfJointPtr ujoint);
 
@@ -43,7 +47,7 @@ namespace robot_calibration {
         return false;
     }
 
-    bool LoadUrdf(Robotd* robot, const std::string& urdf_uri) {
+    bool LoadUrdf(Robotd* robot, const std::string& urdf_uri, bool load_meshes) {
         // Parse URI for file location.
         std::string scheme, authority, path, _q, _f;
         if (!ParseUriRef(urdf_uri, scheme, authority, path, _q, _f)) {
@@ -69,10 +73,10 @@ namespace robot_calibration {
         }
         xml_file.close();
 
-        return LoadUrdfString(robot, xml_model_string);
+        return LoadUrdfString(robot, xml_model_string, load_meshes);
     }
 
-    bool LoadUrdfString(Robotd* robot, const std::string& urdf_string) {
+    bool LoadUrdfString(Robotd* robot, const std::string& urdf_string, bool load_meshes) {
         // Parse URDF model.
         ModelInterfacePtr model;
         model = urdf::parseURDF(urdf_string);
@@ -84,26 +88,33 @@ namespace robot_calibration {
             return false;
         }
         Linkd* root_link = new Linkd;
-        CopyLinkProperties(root_link, urdf_link);
+        CopyLinkProperties(root_link, urdf_link, load_meshes);
         robot->setRootLink(root_link);
 
         // Set robot name.
         robot->setName(model->getName());
 
-        return ExploreLink(robot, model, urdf_link, root_link);
+        // Build robot model.
+        bool success = ExploreLink(robot, model, urdf_link, root_link, load_meshes);
+
+        // Update all transforms.
+        robot->update();
+
+        return success;
     }
 
     bool ExploreLink(Robotd* robot,
                      ModelInterfacePtr model,
                      UrdfLinkPtr urdf_link,
-                     Linkd* parent) {
+                     Linkd* parent,
+                     bool load_meshes) {
         bool success = true;
 
         // Create all child links and add them to the robot. We want
         // to create the child links before creating the child joints.
         for (size_t i = 0; i < urdf_link->child_links.size(); i++) {
             Linkd* child = new Linkd;
-            CopyLinkProperties(child, urdf_link->child_links[i]);
+            CopyLinkProperties(child, urdf_link->child_links[i], load_meshes);
             robot->addLink(child);
         }
 
@@ -119,13 +130,13 @@ namespace robot_calibration {
         // kinematic tree.
         for (size_t i = 0; i < urdf_link->child_links.size(); i++) {
             Linkd* child = robot->getLink(urdf_link->child_links[i]->name);
-            ExploreLink(robot, model, urdf_link->child_links[i], child);
+            ExploreLink(robot, model, urdf_link->child_links[i], child, load_meshes);
         }
 
         return success;
     }
 
-    bool CopyLinkProperties(Linkd* link, UrdfLinkPtr ulink) {
+    bool CopyLinkProperties(Linkd* link, UrdfLinkPtr ulink, bool load_meshes) {
         Linkd::State& link_state = link->getState();
 
         link_state.link_name = ulink->name;
@@ -141,6 +152,63 @@ namespace robot_calibration {
             link_state.T_inertial.translation() = t;
             link_state.T_inertial.linear() = q.matrix();
         }
+
+        if (load_meshes)
+            for (int i = 0; i < ulink->visual_array.size(); i++) {
+                Eigen::Isometry3d T_shape;
+                Eigen::Vector3d t(ulink->visual_array[i]->origin.position.x,
+                                  ulink->visual_array[i]->origin.position.y,
+                                  ulink->visual_array[i]->origin.position.z);
+                Eigen::Quaterniond q(ulink->visual_array[i]->origin.rotation.w,
+                                     ulink->visual_array[i]->origin.rotation.x,
+                                     ulink->visual_array[i]->origin.rotation.y,
+                                     ulink->visual_array[i]->origin.rotation.z);
+                T_shape.translation() = t;
+                T_shape.linear() = q.matrix();
+                link_state.T_shapes.push_back(T_shape);
+
+                shapes::ShapePtr shape = ConstructShape(ulink->visual_array[i]->geometry.get());
+                link_state.shapes.push_back(shape);
+            }
+
+        return true;
+    }
+
+    shapes::ShapePtr ConstructShape(const urdf::Geometry *geom)
+    {
+        shapes::Shape *result = NULL;
+        switch (geom->type)
+        {
+        case urdf::Geometry::SPHERE:
+            result = new shapes::Sphere(static_cast<const urdf::Sphere*>(geom)->radius);
+            break;
+        case urdf::Geometry::BOX:
+        {
+            urdf::Vector3 dim = static_cast<const urdf::Box*>(geom)->dim;
+            result = new shapes::Box(dim.x, dim.y, dim.z);
+        }
+        break;
+        case urdf::Geometry::CYLINDER:
+            result = new shapes::Cylinder(static_cast<const urdf::Cylinder*>(geom)->radius,
+                                          static_cast<const urdf::Cylinder*>(geom)->length);
+            break;
+        case urdf::Geometry::MESH:
+        {
+            const urdf::Mesh *mesh = static_cast<const urdf::Mesh*>(geom);
+            if (!mesh->filename.empty())
+            {
+                Eigen::Vector3d scale(mesh->scale.x, mesh->scale.y, mesh->scale.z);
+                shapes::Mesh *m = shapes::createMeshFromResource(mesh->filename, scale);
+                result = m;
+            }
+        }
+        break;
+        default:
+            ROS_ERROR("Unknown geometry type: %d", (int)geom->type);
+            break;
+        }
+
+        return shapes::ShapePtr(result);
     }
 
     bool CopyJointProperties(Jointd* joint, UrdfJointPtr ujoint) {

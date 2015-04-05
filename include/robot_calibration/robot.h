@@ -37,10 +37,12 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 #pragma once
+#include <iostream>
 #include <vector>
 #include <map>
 #include <boost/shared_ptr.hpp>
 #include <Eigen/Dense>
+#include <geometric_shapes/shapes.h>
 #include <robot_calibration/exception.h>
 
 
@@ -57,7 +59,7 @@ namespace robot_calibration
         typedef AutoDiffLink<T> LinkT;
         typedef AutoDiffJoint<T> JointT;
         typedef AutoDiffRobot<T> RobotT;
-        typedef Eigen::Transform<T,3,Eigen::Isometry> IsometryT;
+        typedef Eigen::Transform<T,3,Eigen::Isometry> Isometry3T;
         typedef Eigen::Matrix<T,2,1> Vector2T;
         typedef Eigen::Matrix<T,3,1> Vector3T;
         typedef Eigen::AngleAxis<T> AngleAxisT;
@@ -67,7 +69,7 @@ namespace robot_calibration
             LinkT*      parent;         // The parent link of this joint.
             LinkT*      child;          // The child link of this joint.
             RobotT*     robot;          // The robot this joint belongs to.
-            IsometryT   T_origin;       // The transform from parent link to child link at joint angle zero.
+            Isometry3T  T_origin;       // The transform from parent link to child link at joint angle zero.
             Vector3T    axis;           // The joint axis (defined the child link frame).
             JointT*     mimic;          // The joint mimicking this joint.
             bool        fixed;          // The boolean signifying whether the joint is fixed or not.
@@ -76,9 +78,9 @@ namespace robot_calibration
             T           angle;          // The joint angle (fixed for each measurement).
             T           angle_offset;   // The parameter defining the joint angle offset to the real zero.
             Vector3T    axis_offset;    // The parameter defining the joint axis offset to the real axis.
-            IsometryT   T_joint;        // The transform from parent link to child link at these parameter values.
+            Isometry3T  T_joint;        // The transform from parent link to child link at these parameter values.
             bool        dirty;          // The boolean signifying whether the joint transform requires updating.
-            IsometryT   T_global;       // The global transform to the child link for the given parameter values.
+            Isometry3T  T_global;       // The global transform to the child link for the given parameter values.
         };
 
         AutoDiffJoint() {
@@ -91,16 +93,12 @@ namespace robot_calibration
         AutoDiffJoint(const AutoDiffJoint<double>* joint) {
         }
 
-        // Disable copy constructor and assignment operator.
-        AutoDiffJoint(const AutoDiffJoint<T>&) = delete;
-        AutoDiffJoint<T>& operator=(const AutoDiffJoint<T>&) = delete;
-
         void reset() {
             _state.joint_name = "";
             _state.parent = NULL;
             _state.child = NULL;
             _state.robot = NULL;
-            _state.T_origin = IsometryT::Identity();
+            _state.T_origin = Isometry3T::Identity();
             _state.axis = Vector3T::UnitZ();
             _state.mimic = NULL;
             _state.fixed = true;
@@ -109,9 +107,9 @@ namespace robot_calibration
             _state.angle = T(0);
             _state.angle_offset = T(0);
             _state.axis_offset = Vector3T::Zero();
-            _state.T_joint = IsometryT::Identity();
+            _state.T_joint = Isometry3T::Identity();
             _state.dirty = true;
-            _state.T_global = IsometryT::Identity();
+            _state.T_global = Isometry3T::Identity();
         }
 
         const State& getState() const {
@@ -164,10 +162,10 @@ namespace robot_calibration
             return true;
         }
 
-        const IsometryT& getGlobalTransform() const
+        const Isometry3T& getGlobalTransform() const
         {
             if (_state.dirty)
-                ROS_ERROR("Requesting dirty transform for %s", _state.joint_name.c_str());
+                std::cerr << "Requesting dirty transform for " << _state.joint_name << std::endl;
             return _state.T_global;
         }
 
@@ -175,7 +173,7 @@ namespace robot_calibration
             // If the jointd transform is dirty, recompute it with the
             // new parameters.
             if (_state.dirty) {
-                IsometryT T_joint = _state.T_origin;
+                Isometry3T T_joint = _state.T_origin;
 
                 // Translate the parent to child frame by the axis offset.
                 T_joint.translate(_state.axis_offset);
@@ -190,9 +188,8 @@ namespace robot_calibration
             }
 
             // Compute the global transform.
-            const IsometryT& T_parent = _state.parent->getGlobalTransform();
+            const Isometry3T& T_parent = _state.parent->getGlobalTransform();
             _state.T_global = T_parent * _state.T_joint;
-            // _state.T_global = _state.T_joint * T_parent;
 
             // Update the child.
             _state.child->update();
@@ -200,6 +197,11 @@ namespace robot_calibration
 
     protected:
         State _state;
+
+    private:
+        // Disable copy constructor and assignment operator.
+        AutoDiffJoint(const AutoDiffJoint<T>&);
+        AutoDiffJoint<T>& operator=(const AutoDiffJoint<T>&);
     };
 
     template <typename T>
@@ -209,28 +211,41 @@ namespace robot_calibration
         typedef AutoDiffJoint<T> JointT;
         typedef AutoDiffRobot<T> RobotT;
         typedef std::vector<JointT*> JointVectorT;
-        typedef Eigen::Transform<T,3,Eigen::Isometry> IsometryT;
+        typedef Eigen::Transform<T,3,Eigen::Isometry> Isometry3T;
         typedef Eigen::Matrix<T,3,1> Vector3T;
+        typedef std::vector<Isometry3T, Eigen::aligned_allocator<Isometry3T> > IsometryVectorT;
+        typedef std::vector<shapes::ShapePtr> ShapeVector;
 
         struct State {
-            std::string  link_name;     // The link's name.
-            RobotT*      robot;         // The robot this link belongs to.
-            JointT*      parent;        // The joint this link is a child of.
-            JointVectorT children;      // The joints this link is parent to.
-            IsometryT    T_inertial;    // The inertial frame of this link.
-            IsometryT    T_global;      // The global transform to this link.
-            bool         dirty;         // The boolean signifying whether the global transform requires updating.
+            std::string     link_name;  // The link's name.
+            RobotT*         robot;      // The robot this link belongs to.
+            JointT*         parent;     // The joint this link is a child of.
+            JointVectorT    children;   // The joints this link is parent to.
+            Isometry3T      T_inertial; // The inertial frame of this link.
+            Isometry3T      T_global;   // The global transform to this link.
+            bool            dirty;      // The boolean signifying whether the global transform requires updating.
+            ShapeVector     shapes;     // The visual shapes associated with this link.
+            IsometryVectorT T_shapes;   // The transforms to each shape.
         };
 
         AutoDiffLink() {
+            reset();
         }
 
         AutoDiffLink(const AutoDiffLink<double>* link) {
         }
 
-        // Disable copy constructor and assignment operator.
-        AutoDiffLink(const AutoDiffLink<T>&) = delete;
-        AutoDiffLink<T>& operator=(const AutoDiffLink<T>&) = delete;
+        void reset() {
+            _state.link_name = "";
+            _state.robot = NULL;
+            _state.parent = NULL;
+            _state.children.clear();
+            _state.T_inertial = Isometry3T::Identity();
+            _state.T_global = Isometry3T::Identity();
+            _state.dirty = true;
+            _state.shapes.clear();
+            _state.T_shapes.clear();
+        }
 
         const State& getState() const {
             return _state;
@@ -248,12 +263,12 @@ namespace robot_calibration
             _state.dirty = dirty;
         }
 
-        IsometryT getGlobalTransform() const
+        Isometry3T getGlobalTransform() const
         {
             if (_state.parent == NULL)
-                return IsometryT::Identity();
+                return Isometry3T::Identity();
             if (_state.dirty)
-                ROS_ERROR("Requesting dirty transform for %s", _state.link_name.c_str());
+                std::cerr << "Requesting dirty transform for " << _state.link_name << std::endl;
             return _state.T_global;
         }
 
@@ -262,7 +277,7 @@ namespace robot_calibration
             if (_state.parent)
                 _state.T_global = _state.parent->getGlobalTransform();
             else
-                _state.T_global = IsometryT::Identity();
+                _state.T_global = Isometry3T::Identity();
             _state.dirty = false;
 
             // Update the children.
@@ -272,6 +287,12 @@ namespace robot_calibration
 
     protected:
         State _state;
+
+    private:
+        // Disable copy constructor and assignment operator.
+        AutoDiffLink(const AutoDiffLink<T>&);
+        AutoDiffLink<T>& operator=(const AutoDiffLink<T>&);
+
     };
 
     template <typename T>
@@ -286,7 +307,7 @@ namespace robot_calibration
         typedef std::map<std::string, LinkT*> LinkNameMapT;
         typedef std::map<int, JointT*> JointIndexMapT;
         typedef std::map<int, LinkT*> LinkIndexMapT;
-        typedef Eigen::Transform<T,3,Eigen::Isometry> IsometryT;
+        typedef Eigen::Transform<T,3,Eigen::Isometry> Isometry3T;
         typedef Eigen::Matrix<T,3,1> Vector3T;
         typedef Eigen::Matrix<T,Eigen::Dynamic,1> VectorXT;
 
@@ -305,10 +326,6 @@ namespace robot_calibration
 
         AutoDiffRobot(const AutoDiffRobot<double>* robot) {
         }
-
-        // Disable copy constructor and assignment operator.
-        AutoDiffRobot(const AutoDiffRobot<T>&) = delete;
-        AutoDiffRobot<T>& operator=(const AutoDiffRobot<T>&) = delete;
 
         const std::string& getName() const {
             return _state.robot_name;
@@ -431,12 +448,12 @@ namespace robot_calibration
             }
         }
 
-        IsometryT getGlobalTransform(const std::string& frame) {
+        Isometry3T getGlobalTransform(const std::string& frame) {
             if (_state.joint_name_map.find(frame) != _state.joint_name_map.end())
                 return _state.joint_name_map[frame]->getGlobalTransform();
             if (_state.link_name_map.find(frame) != _state.link_name_map.end())
                 return _state.link_name_map[frame]->getGlobalTransform();
-            return IsometryT::Identity();
+            return Isometry3T::Identity();
         }
 
         void update() {
@@ -445,6 +462,12 @@ namespace robot_calibration
 
     protected:
         State _state;
+
+    private:
+        // Disable copy constructor and assignment operator.
+        AutoDiffRobot(const AutoDiffRobot<T>&);
+        AutoDiffRobot<T>& operator=(const AutoDiffRobot<T>&);
+
     };
 
     typedef AutoDiffRobot<double> Robotd;

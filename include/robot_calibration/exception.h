@@ -38,6 +38,7 @@
  *********************************************************************/
 #pragma once
 #include <stdexcept>
+#include <cstdio>
 
 
 #define ROBOT_CALIBRATION_ASSERT(x, fmt, ...)       \

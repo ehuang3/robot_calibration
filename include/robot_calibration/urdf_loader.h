@@ -42,8 +42,8 @@
 
 namespace robot_calibration {
 
-    bool LoadUrdf(Robotd* robot, const std::string& urdf_uri);
+    bool LoadUrdf(Robotd* robot, const std::string& urdf_uri, bool load_meshes=false);
 
-    bool LoadUrdfString(Robotd* robot, const std::string& urdf_string);
+    bool LoadUrdfString(Robotd* robot, const std::string& urdf_string, bool load_meshes=false);
 
 }
